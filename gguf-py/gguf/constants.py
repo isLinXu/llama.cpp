@@ -110,6 +110,7 @@ class Keys:
         LEADING_DENSE_BLOCK_COUNT         = "{arch}.leading_dense_block_count"
         FEED_FORWARD_LENGTH               = "{arch}.feed_forward_length"
         EXPERT_FEED_FORWARD_LENGTH        = "{arch}.expert_feed_forward_length"
+        VISION_EXPERT_FEED_FORWARD_LENGTH = "{arch}.vision_expert_feed_forward_length"
         EXPERT_SHARED_FEED_FORWARD_LENGTH = "{arch}.expert_shared_feed_forward_length"
         EXPERT_CHUNK_FEED_FORWARD_LENGTH  = "{arch}.expert_chunk_feed_forward_length"
         USE_PARALLEL_RESIDUAL             = "{arch}.use_parallel_residual"
@@ -447,6 +448,7 @@ class MODEL_ARCH(IntEnum):
     AFMOE            = auto()
     ERNIE4_5         = auto()
     ERNIE4_5_MOE     = auto()
+    ERNIE4_5_VL_MOE = auto()
     HUNYUAN_MOE      = auto()
     HUNYUAN_DENSE    = auto()
     SMOLLM3          = auto()
@@ -723,6 +725,17 @@ class MODEL_TENSOR(IntEnum):
     V_DS_NORM            = auto() # qwen3vl
     V_DS_FC1             = auto() # qwen3vl
     V_DS_FC2             = auto() # qwen3vl
+    V_FFN_GATE_INP       = auto() # ernie45vlmoe
+    V_FFN_UP_EXPS        = auto() # ernie45vlmoe
+    V_FFN_DOWN_EXPS      = auto() # ernie45vlmoe
+    V_FFN_NORM_EXPS      = auto() # ernie45vlmoe
+    V_FFN_GATE_EXPS      = auto() # ernie45vlmoe
+    V_FFN_GATE_SHEXP     = auto() # ernie45vlmoe
+    V_FFN_UP_SHEXP       = auto() # ernie45vlmoe
+    V_FFN_DOWN_SHEXP     = auto() # ernie45vlmoe
+    V_FFN_GATE_INP_SHEXP = auto() # ernie45vlmoe
+    V_FFN_NORM_SHEXP     = auto() # ernie45vlmoe
+    V_FFN_EXP_PROBS_B    = auto() # ernie45vlmoe
     V_MM_POST_FC_NORM    = auto() # cogvlm
     V_MM_UP              = auto() # cogvlm
     V_MM_DOWN            = auto() # cogvlm
@@ -879,6 +892,7 @@ MODEL_ARCH_NAMES: dict[MODEL_ARCH, str] = {
     MODEL_ARCH.AFMOE:            "afmoe",
     MODEL_ARCH.ERNIE4_5:         "ernie4_5",
     MODEL_ARCH.ERNIE4_5_MOE:     "ernie4_5-moe",
+    MODEL_ARCH.ERNIE4_5_VL_MOE:  "ernie4_5-vl-moe",
     MODEL_ARCH.FALCON_H1:        "falcon-h1",
     MODEL_ARCH.HUNYUAN_MOE:      "hunyuan-moe",
     MODEL_ARCH.HUNYUAN_DENSE:    "hunyuan-dense",
@@ -1159,6 +1173,11 @@ TENSOR_NAMES: dict[MODEL_TENSOR, str] = {
     MODEL_TENSOR.V_MM_GATE:                 "mm.gate",
     MODEL_TENSOR.V_TOK_BOI:                 "v.boi",
     MODEL_TENSOR.V_TOK_EOI:                 "v.eoi",
+    MODEL_TENSOR.V_FFN_GATE_INP:            "blk.{bid}.v_ffn_gate_inp",
+    MODEL_TENSOR.V_FFN_GATE_EXPS:           "blk.{bid}.v_ffn_gate_exps",
+    MODEL_TENSOR.V_FFN_DOWN_EXPS:           "blk.{bid}.v_ffn_down_exps",
+    MODEL_TENSOR.V_FFN_UP_EXPS:             "blk.{bid}.v_ffn_up_exps",
+    MODEL_TENSOR.V_FFN_EXP_PROBS_B:         "blk.{bid}.v_exp_probs_b",
     # audio (mtmd)
     # note: all audio tensor names must use prefix "a." or "mm.a."
     MODEL_TENSOR.A_ENC_EMBD_POS:            "a.position_embd",
@@ -2597,6 +2616,33 @@ MODEL_TENSORS: dict[MODEL_ARCH, list[MODEL_TENSOR]] = {
         MODEL_TENSOR.FFN_UP_SHEXP,
         MODEL_TENSOR.FFN_EXP_PROBS_B,
     ],
+    MODEL_ARCH.ERNIE4_5_VL_MOE: [
+        MODEL_TENSOR.TOKEN_EMBD,
+        MODEL_TENSOR.OUTPUT_NORM,
+        MODEL_TENSOR.OUTPUT,
+        MODEL_TENSOR.ATTN_NORM,
+        MODEL_TENSOR.ATTN_Q,
+        MODEL_TENSOR.ATTN_K,
+        MODEL_TENSOR.ATTN_V,
+        MODEL_TENSOR.ATTN_OUT,
+        MODEL_TENSOR.FFN_NORM,
+        MODEL_TENSOR.FFN_GATE,
+        MODEL_TENSOR.FFN_DOWN,
+        MODEL_TENSOR.FFN_UP,
+        MODEL_TENSOR.FFN_GATE_INP,
+        MODEL_TENSOR.FFN_GATE_EXP,
+        MODEL_TENSOR.FFN_DOWN_EXP,
+        MODEL_TENSOR.FFN_UP_EXP,
+        MODEL_TENSOR.FFN_EXP_PROBS_B,
+        MODEL_TENSOR.V_FFN_GATE_INP,
+        MODEL_TENSOR.V_FFN_GATE_EXPS,
+        MODEL_TENSOR.V_FFN_DOWN_EXPS,
+        MODEL_TENSOR.V_FFN_UP_EXPS,
+        MODEL_TENSOR.V_FFN_EXP_PROBS_B,
+        MODEL_TENSOR.FFN_GATE_SHEXP,
+        MODEL_TENSOR.FFN_DOWN_SHEXP,
+        MODEL_TENSOR.FFN_UP_SHEXP,
+    ],
     MODEL_ARCH.PLM: [
         MODEL_TENSOR.TOKEN_EMBD,
         MODEL_TENSOR.OUTPUT,
@@ -3770,6 +3816,7 @@ class VisionProjectorType:
     MUSIC_FLAMINGO = "musicflamingo" # audio
     GLM4V = "glm4v"
     YOUTUVL = "youtuvl"
+    ERNIE45VLMOE = "ernie4.5vl_moe"
 
 
 # Items here are (block size, type size)
